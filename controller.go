@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"fmt"
 	"errors"
 	"html/template"
 	"net/http"
@@ -67,14 +68,21 @@ func (wc workerController) Update(context *admin.Context) {
 }
 
 func (wc workerController) AddJob(context *admin.Context) {
+
 	jobResource := wc.Worker.JobResource
 	result := jobResource.NewStruct().(QorJobInterface)
 	job := wc.Worker.GetRegisteredJob(context.Request.Form.Get("job_name"))
 	result.SetJob(job)
 
+	fmt.Printf("Starting AddJob() with job=%s\n", job.Name)
+
+	fmt.Printf("Checking permission to AddJob() with job=%s\n", job.Name)
+
 	if !job.HasPermission(roles.Create, context.Context) {
 		context.AddError(errors.New("don't have permission to run job"))
 	}
+
+	fmt.Printf("Decoding context for AddJob() with job=%s\n", job.Name)
 
 	if context.AddError(jobResource.Decode(context.Context, result)); !context.HasError() {
 		// ensure job name is correct
@@ -82,6 +90,8 @@ func (wc workerController) AddJob(context *admin.Context) {
 		context.AddError(jobResource.CallSave(result, context.Context))
 		context.AddError(wc.Worker.AddJob(result))
 	}
+
+	fmt.Printf("Before context.HasError() check in AddJob() with job=%s\n", job.Name)
 
 	if context.HasError() {
 		responder.With("html", func() {
@@ -94,8 +104,12 @@ func (wc workerController) AddJob(context *admin.Context) {
 		return
 	}
 
+	fmt.Printf("Before redirect for AddJob() with job=%s\n", job.Name)
+
 	context.Flash(string(context.Admin.T(context.Context, "qor_worker.form.successfully_created", "{{.Name}} was successfully created", jobResource)), "success")
 	http.Redirect(context.Writer, context.Request, context.Request.URL.Path, http.StatusFound)
+
+	fmt.Printf("Done with AddJob() with job=%s\n", job.Name)
 }
 
 func (wc workerController) RunJob(context *admin.Context) {

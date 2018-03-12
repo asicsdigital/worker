@@ -91,16 +91,23 @@ func (cron *Cron) Add(job QorJobInterface) (err error) {
 	cron.parseJobs()
 	defer cron.writeCronJob()
 
+	fmt.Printf("Checking for exe existence in Add() with job=%s\n", job.GetJobName())
+
 	var binaryFile string
 	if binaryFile, err = filepath.Abs(os.Args[0]); err == nil {
 		var jobs []*cronJob
 		for _, cronJob := range cron.Jobs {
 			if cronJob.JobID != job.GetJobID() {
+				fmt.Printf("Adding existing cron job in Add() with job=%s, jobId=%v, pid=%v\n", cronJob.Command, cronJob.JobID, cronJob.Pid)
+
 				jobs = append(jobs, cronJob)
 			}
 		}
 
 		if scheduler, ok := job.GetArgument().(Scheduler); ok && scheduler.GetScheduleTime() != nil {
+			fmt.Printf("Scheduling =cron job in Add() with job=%s\n", job.GetJobName())
+
+
 			scheduleTime := scheduler.GetScheduleTime().In(time.Local)
 			job.SetStatus(JobStatusScheduled)
 
@@ -110,14 +117,22 @@ func (cron *Cron) Add(job QorJobInterface) (err error) {
 				Command: fmt.Sprintf("%d %d %d %d * cd %v; %v --qor-job %v\n", scheduleTime.Minute(), scheduleTime.Hour(), scheduleTime.Day(), scheduleTime.Month(), currentPath, binaryFile, job.GetJobID()),
 			})
 		} else {
+			fmt.Printf("Forking cron job in Add() with job=%s, binaryFile=%s\n", job.GetJobName(), binaryFile)
+
 			cmd := exec.Command(binaryFile, "--qor-job", job.GetJobID())
 			if err = cmd.Start(); err == nil {
+				fmt.Printf("Appending new cron job in Add() with job=%s, jobId=%v, pid=%v\n", job.GetJobName(), job.GetJobID(), cmd.Process.Pid)
+
 				jobs = append(jobs, &cronJob{JobID: job.GetJobID(), Pid: cmd.Process.Pid})
 				cmd.Process.Release()
+
+				fmt.Printf("Process for new job released in Add() with job=%s\n", job.GetJobName())
 			}
 		}
 		cron.Jobs = jobs
 	}
+
+	fmt.Printf("Done with Add() with job=%s\n", job.GetJobName())
 
 	return
 }
