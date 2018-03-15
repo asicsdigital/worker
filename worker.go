@@ -136,7 +136,7 @@ func (worker *Worker) ConfigureQorResource(res resource.Resourcer) {
 		cmdLine.Parse(os.Args[1:])
 		worker.mounted = true
 
-		fmt.Printf("Worker process qorJobID=%v, runAnother=%v\n", qorJobID, runAnother)
+		fmt.Printf("Worker process qorJobID=%s, runAnother=%s\n", qorJobID, runAnother)
 
 		if *qorJobID != "" {
 			if *runAnother == true {
@@ -144,21 +144,21 @@ func (worker *Worker) ConfigureQorResource(res resource.Resourcer) {
 					newJobID := newJob.GetJobID()
 					qorJobID = &newJobID
 
-					fmt.Printf("Worker process new qorJobID=%v\n", qorJobID)
+					fmt.Printf("Worker process new qorJobID=%s\n", qorJobID)
 				} else {
 					fmt.Println("failed to clone job " + *qorJobID)
 					os.Exit(1)
 				}
 			}
 
-			fmt.Printf("Worker process about to run job with qorJobID=%v\n", qorJobID)
+			fmt.Printf("Worker process about to run job with qorJobID=%s\n", qorJobID)
 
 			if err := worker.RunJob(*qorJobID); err == nil {
-				fmt.Printf("Worker process successfully ran job with qorJobID=%v\n", qorJobID)
+				fmt.Printf("Worker process successfully ran job with qorJobID=%s\n", qorJobID)
 
 				os.Exit(0)
 			} else {
-				fmt.Printf("Worker process error running job with qorJobID=%v. err=%v\n", qorJobID, err)
+				fmt.Printf("Worker process error running job with qorJobID=%s. err=%v\n", qorJobID, err)
 
 				fmt.Println(err)
 				// os.Exit(1)
